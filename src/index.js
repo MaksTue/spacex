@@ -6,20 +6,25 @@ document.addEventListener("DOMContentLoaded", setup);
 
 function setup() {
   const spaceX = new SpaceX();
-  spaceX.launchpads().then((data) => {
-    const listContainer = document.getElementById("listContainer");
-    renderLaunchpads(data, listContainer);
-    drawMap(data);
-    setEventHandlers();
-  });
+  spaceX
+    .launches()
+    .then((data) => {
+      const listContainer = document.getElementById("listContainer");
+      renderLaunches(data, listContainer);
+      return spaceX.launchpads();
+    })
+    .then((launchpadData) => {
+      drawMap(launchpadData);
+      setEventHandlers();
+    });
 }
 
-function renderLaunchpads(launches, container) {
+function renderLaunches(launches, container) {
   const list = document.createElement("ul");
   launches.forEach((launch) => {
     const item = document.createElement("li");
     item.innerHTML = launch.name;
-    item.setAttribute("id", launch.id);
+    item.setAttribute("launchpad", launch.launchpad);
     list.appendChild(item);
   });
   container.replaceChildren(list);
@@ -28,13 +33,12 @@ function renderLaunchpads(launches, container) {
 function setEventHandlers() {
   const listItems = document.querySelectorAll("#listContainer ul li");
   listItems.forEach((item) => {
+    const itemId = item.getAttribute("launchpad");
     item.addEventListener("mouseover", () => {
-      const itemId = item.id;
-      d3.select(`circle[id='${itemId}']`).style("fill", "red");
+      d3.select(`circle[id='${itemId}']`).raise().style("fill", "red");
     });
 
     item.addEventListener("mouseout", () => {
-      const itemId = item.id;
       d3.select(`circle[id='${itemId}']`).style("fill", "blue");
     });
   });
@@ -84,9 +88,8 @@ function drawMap(launchpadsData) {
       return projection([d.longitude, d.latitude])[1];
     })
     .attr("id", function (d) {
-      return d.id; // уникальный id для каждой точки
+      return d.id;
     })
-    .attr("r", 5) // Размер точек
-    .style("fill", "blue") // Цвет точек
-    .style("opacity", 0.7);
+    .attr("r", 5)
+    .style("fill", "blue");
 }
